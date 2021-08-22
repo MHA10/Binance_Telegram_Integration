@@ -2,6 +2,7 @@ from binance.enums import *
 from binance.client import Client
 from gevent import os
 from dotenv import load_dotenv
+from utils import *
 
 load_dotenv()
 
@@ -20,15 +21,24 @@ class Connect:
         api_secret = os.environ.get('api_secret')
         self.client = Client(api_key, api_secret, testnet=True)
 
-    def place_order(self) -> None:
+    def place_order(self, msg_dict="") -> None:
         """
         this places an order, need to change the hardcoded values
         :return:
         """
-        order = self.client.order_market_buy(
-                symbol='XRPBNB',
-                quantity=100)
-        order
+
+        if msg_dict["buy_or_sell"] == "buy":
+            asset = (msg_dict["symbol"])[-3:]
+            balance = self.get_balance(asset)
+            available = balance["free"]
+            percentage = int(msg_dict["percentage"])
+            print(available)
+
+            checked_quantity = 0
+            order = self.client.order_market_buy(
+                    symbol=msg_dict["symbol"],
+                    quantity=100)
+
 
     def get_history(self) -> None:
         """
@@ -39,21 +49,23 @@ class Connect:
 
         orders
 
-    def get_balance(self, asset='BTC') -> None:
+    def get_balance(self, asset='BTC'):
         """
         :param asset: the tokens we want to check the balance for in our account
         :return:
         """
         balance = self.client.get_asset_balance(asset=asset)
-        balance
+        return balance
 
 
 if __name__ == '__main__':
-    # binance()
-
+    # need to replace this msg with the ones from telegram later on
+    temp_msg1 = "buy-XRPBNB-10"
+    temp_msg2 = "sell-ADABTC-20"
+    parsed_msg = parse_message(temp_msg1)
     # this client can be passed the api_key and the api_secret keys
     client = Connect()
     # place_order(client)
-    # client.place_order()
-    client.get_history()
+    client.place_order(parsed_msg)
+    # client.get_history()
     client.get_balance()
