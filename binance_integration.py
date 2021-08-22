@@ -10,7 +10,7 @@ class Connect:
 
     client = None
 
-    def __init__(self, api_key=None, api_secret=None):
+    def __init__(self, api_key=None, api_secret=None) -> None:
         """
         we can pass in the api_keu and the api_secret key when we move onto the telgeram parsing part
         :param api_key:
@@ -20,7 +20,7 @@ class Connect:
         api_secret = os.environ.get('api_secret')
         self.client = Client(api_key, api_secret, testnet=True)
 
-    def place_order(self):
+    def place_order(self) -> None:
         """
         this places an order, need to change the hardcoded values
         :return:
@@ -30,7 +30,7 @@ class Connect:
                 quantity=100)
         order
 
-    def get_history(self):
+    def get_history(self) -> None:
         """
         this is not working yet
         :return:
@@ -39,7 +39,7 @@ class Connect:
 
         orders
 
-    def get_balance(self, asset='BTC'):
+    def get_balance(self, asset='BTC') -> None:
         """
         :param asset: the tokens we want to check the balance for in our account
         :return:
