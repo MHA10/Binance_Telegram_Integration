@@ -1,38 +1,59 @@
-from config import Connect
-import json
-from json import loads, JSONDecodeError
-from time import sleep
-import websocket
+from binance.enums import *
+from binance.client import Client
+from gevent import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-def connect():
-    client = Connect().make_connection()
-    print("logged in")
+class Connect:
 
+    client = None
 
-def binance():
-    connect()
+    def __init__(self, api_key=None, api_secret=None):
+        """
+        we can pass in the api_keu and the api_secret key when we move onto the telgeram parsing part
+        :param api_key:
+        :param api_secret:
+        """
+        api_key = os.environ.get('api_key')
+        api_secret = os.environ.get('api_secret')
+        self.client = Client(api_key, api_secret, testnet=True)
 
-    def on_message(ws, message):
-        try:
-            data = json.loads(message)
-        except JSONDecodeError:
-            data = {}
+    def place_order(self):
+        """
+        this places an order, need to change the hardcoded values
+        :return:
+        """
+        order = self.client.order_market_buy(
+                symbol='XRPBNB',
+                quantity=100)
+        order
 
-        print(message)
+    def get_history(self):
+        """
+        this is not working yet
+        :return:
+        """
+        orders = client.get_my_trades(symbol='XRPBNB')
 
-    def ws_open(ws):
-        # waiting for the authentication
-        sleep(3)
-        # subscribe_spot_price(ws)
-        # subscribe_trade_price(ws)
+        orders
 
-        return
-
-    endpoint = "wss://stream.binance.com:9443/ws/btcusdt@kline_1m"
-    ws = websocket.WebSocketApp(endpoint, on_open=ws_open, on_message=on_message)
-    ws.run_forever()
+    def get_balance(self, asset='BTC'):
+        """
+        :param asset: the tokens we want to check the balance for in our account
+        :return:
+        """
+        balance = self.client.get_asset_balance(asset=asset)
+        balance
 
 
 if __name__ == '__main__':
-    binance()
+    # binance()
+
+    # this client can be passed the api_key and the api_secret keys
+    client = Connect()
+    # place_order(client)
+    # client.place_order()
+    client.get_history()
+    client.get_balance()
