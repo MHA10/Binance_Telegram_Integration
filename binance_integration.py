@@ -21,51 +21,58 @@ class Connect:
         api_secret = os.environ.get('api_secret')
         self.client = Client(api_key, api_secret, testnet=True)
 
-    def place_order(self, msg_dict="") -> None:
+    def place_order(self, order_msg="", _type='limit') -> None:
         """
         this places an order, need to change the hardcoded values
         :return:
         """
 
-        if msg_dict["buy_or_sell"] == "buy":
-            asset = (msg_dict["symbol"])[-3:]
-            balance = self.get_balance(asset)
-            available = balance["free"]
-            percentage = int(msg_dict["percentage"])
-            print(available)
+        if order_msg["side"] == "buy":
+            # asset = order_msg["symbol"]
+            # balance = self.get_balance(asset)
+            # available = balance["free"]
+            # percentage = int(msg_dict["percentage"])
 
             checked_quantity = 0
-            order = self.client.order_market_buy(
-                    symbol=msg_dict["symbol"],
-                    quantity=100)
+            if _type == 'limit':
+                order = self.client.order_limit_buy(
+                        symbol="{0}{1}".format(order_msg["symbol"], order_msg["token"]),
+                        quantity=order_msg['percentage'],
+                        price=1)
+            if _type == 'market':
+                order = self.client.order_market_buy(
+                        symbol="{0}{1}".format(order_msg["symbol"], order_msg["token"]),
+                        quantity=order_msg['percentage'])
 
+            print(order)
 
-    def get_history(self) -> None:
+    def get_history(self, symbol='XRPBNB') -> None:
         """
-        this is not working yet
         :return:
         """
-        orders = client.get_my_trades(symbol='XRPBNB')
+        orders = self.client.get_my_trades(symbol=symbol)
 
-        orders
+        print(orders)
 
-    def get_balance(self, asset='BTC'):
+    def get_balance(self, asset='USDT'):
         """
         :param asset: the tokens we want to check the balance for in our account
         :return:
         """
         balance = self.client.get_asset_balance(asset=asset)
+        print(balance)
         return balance
 
 
 if __name__ == '__main__':
     # need to replace this msg with the ones from telegram later on
-    temp_msg1 = "buy-XRPBNB-10"
-    temp_msg2 = "sell-ADABTC-20"
-    parsed_msg = parse_message(temp_msg1)
-    # this client can be passed the api_key and the api_secret keys
+    # temp_msg1 = "buy-XRPBNB-10"
+    # temp_msg2 = "sell-ADABTC-20"
+    temp_msg2 = "buy XRP USDT 20"
+    order_msg = parse_message(temp_msg2)
     client = Connect()
     # place_order(client)
-    client.place_order(parsed_msg)
-    # client.get_history()
-    client.get_balance()
+    client.get_balance('USDT')
+    client.place_order(order_msg)
+    client.get_history()
+    client.get_balance('USDT')
