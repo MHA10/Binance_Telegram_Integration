@@ -1,4 +1,4 @@
-def parse_message(msg):
+async def parse_message(msg):
     """
     parse the message send from telegram
     extracts buy/sell, symbol and percentage
