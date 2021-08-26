@@ -1,4 +1,4 @@
-async def parse_message(msg):
+async def parse_message(msg, _balance):
     """
     parse the message send from telegram
     extracts buy/sell, symbol and percentage
@@ -16,7 +16,7 @@ async def parse_message(msg):
         'side': order_details[0],
         'symbol': order_details[1],
         'token': order_details[2],
-        'percentage': order_details[3],
+        'percentage': (float(order_details[3])*0.01) * float(_balance['free']),
     }
 
     return msg_dic

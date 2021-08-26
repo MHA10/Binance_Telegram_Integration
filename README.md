@@ -2,6 +2,8 @@
 
 Documentation used
 
-https://python-binance.readthedocs.io/en/latest/account.html#id12
+* reference: 
+  https://python-binance.readthedocs.io/en/latest/account.html#id12
 
-https://testnet.binance.vision/
+* testnet tokens: 
+  https://testnet.binance.vision/
