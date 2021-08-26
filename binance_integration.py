@@ -29,7 +29,7 @@ class Connect:
             side=_side,
             type=_type,
             timeInForce=TIME_IN_FORCE_GTC,
-            quantity=float(order_msg['percentage']),
+            quantity=int(order_msg['percentage']),
             price=_price
         )
 
@@ -94,10 +94,10 @@ async def main():
     # need to replace this msg with the ones from telegram later on
     # temp_msg1 = "buy-XRPBNB-10"
     # temp_msg2 = "sell-ADABTC-20"
-    temp_msg2 = "buy XRP USDT 20"
+    temp_msg2 = "market buy XRP BUSD 20"
     client = Connect()
     await client.create_client()
-    _balance = await client.get_balance()
+    _balance = await client.get_balance('BUSD')
 
     order_msg = await parse_message(temp_msg2, _balance)
 
