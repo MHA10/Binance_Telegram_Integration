@@ -13,11 +13,10 @@ async def parse_message(msg, _balance):
     order_details = msg.split(' ')
 
     msg_dic = {
-        'side': order_details[0],
-        'symbol': order_details[1],
-        'token': order_details[2],
-        'percentage': (float(order_details[3])*0.01) * float(_balance['free']),
+        'side': order_details[1],
+        'symbol': order_details[2],
+        'token': order_details[3],
+        'percentage': (float(order_details[4])*0.01) * float(_balance['free']),
     }
 
     return msg_dic
-    # return msg_dict
