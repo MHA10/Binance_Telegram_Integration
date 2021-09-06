@@ -5,12 +5,13 @@ from gevent import os
 from dotenv import load_dotenv
 from utils import *
 import asyncio
+from binance import ThreadedWebsocketManager
 
 
 load_dotenv()
 
 
-class Connect:
+class BinanceClass:
 
     client = None
 
@@ -19,60 +20,100 @@ class Connect:
         api_secret = os.environ.get('api_secret')
         self.client = AsyncClient(api_key, api_secret, testnet=True)
 
-    async def place_order(self, order_msg="", _type=ORDER_TYPE_LIMIT, _side=SIDE_BUY, _price=1) -> None:
-        """
-        this places an order, need to change the hardcoded values
-        :return:
-        """
-
-        order = await self.client.create_order(
-            symbol="{0}{1}".format(order_msg["symbol"], order_msg["token"]),
-            side=_side,
-            type=_type,
-            timeInForce=TIME_IN_FORCE_GTC,
-            quantity=int(order_msg['percentage']),
-            price=_price
-        )
+    async def place_order(self, sym, token, side, percent, _type, prc=1) -> None:
+        try:
+            order = await self.client.create_order(
+                symbol=f"{sym}{token}",
+                side=side,
+                type=_type,
+                timeInForce=TIME_IN_FORCE_GTC,
+                quantity=int(percent),
+                price=prc
+            )
+        except Exception as e:
+            # need to log this error
+            return e
         print(order)
+        return 'order placed successfully'
 
-    async def get_history(self, symbol='XRPBNB') -> None:
-        """
-        :return:
-        """
-        orders = await self.client.get_my_trades(symbol=symbol)
+    async def get_history(self, sym, token) -> None:
+        orders = await self.client.get_my_trades(symbol=f"{sym}{token}")
         print(orders)
 
-    async def get_balance(self, asset='USDT'):
-        """
-        :param asset: the tokens we want to check the balance for in our account
-        :return:
-        """
-        balance = await self.client.get_asset_balance(asset=asset)
+    async def get_balance(self, token) -> str:
+        balance = await self.client.get_asset_balance(asset=token)
         print(balance)
         return balance
 
     async def close_connection(self):
         await self.client.close_connection()
 
+    async def parse_message(self, msg):
+        """
+        EXPECTED MSG: market buy xrp usdt 10
+        NOTATION: {type} {side} {symbol} {token} {percentage}
+        :return: dict
+        """
+        order_details = msg.split(' ')
+        try:
+            order_msg = {
+                'type': order_details[0].upper(),
+                'side': order_details[1].upper(),
+                'symbol': order_details[2].upper(),
+                'token': order_details[3].upper(),
+            }
 
-async def main(msg=None):
-    # need to replace this msg with the ones from telegram later on
-    # temp_msg1 = "buy-XRPBNB-10"
-    # temp_msg2 = "sell-ADABTC-20"
-    # temp_msg2 = "market buy XRP BUSD 20"
-    client = Connect()
-    await client.create_client()
-    _balance = await client.get_balance('BUSD')
+            token = order_msg.get('token', None)
+            if token is not None:
+                _balance = await self.get_balance(token)
+                print(_balance)
+            else:
+                return {'error': 'invalid token not passed'}
 
-    order_msg = await parse_message(msg, _balance)
+            order_msg['percentage'] = (float(order_details[4]) * 0.01) * float(_balance['free'])
+        except Exception as e:
+            # in case of error we return what error did we get
+            return {'error': e}
+
+        return order_msg
+
+
+async def main(msg, user):
+    client_obj = BinanceClass()
+    await client_obj.create_client()
+
+    order_msg = await client_obj.parse_message(msg)
     print("order msg: ", order_msg)
 
-    await client.place_order(order_msg, _type=ORDER_TYPE_LIMIT, _side=SIDE_BUY)
-    await client.get_history("{0}{1}".format(order_msg["symbol"], order_msg["token"]))
-    await client.get_balance(order_msg["token"])
-    await client.close_connection()
+    _type = order_msg.get('type', None)
+    side = order_msg.get('side', None)
+    symbol = order_msg.get('symbol', None)
+    token = order_msg.get('token', None)
+    percentage = order_msg.get('percentage', None)
+    error = order_msg.get('error', None)
 
+    if user == 'user' and side == SIDE_BUY:
+        return 'Users are not allowed to buy'
 
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    if error is not None:
+        # send error message as response
+        await client_obj.close_connection()
+        return 'An error occured'
+    if _type not in (ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET):
+        error = 'Please enter {market or limit order only}!'
+        await client_obj.close_connection()
+        return error
+    if side not in (SIDE_BUY, SIDE_SELL):
+        error = 'Please enter {buy or sell order only}!'
+        await client_obj.close_connection()
+        return error
+
+    order_status = await client_obj.place_order(sym=symbol, token=token, side=side, percent=percentage,
+                                                # _type=_type,
+                                                _type=ORDER_TYPE_LIMIT, prc=1)
+
+    await client_obj.get_history(sym=symbol, token=token)
+    await client_obj.get_balance(token=token)
+    await client_obj.close_connection()
+
+    return order_status

@@ -1,4 +1,5 @@
-from telethon.sync import TelegramClient, events
+import sys
+from telethon.sync import events
 from gevent import os
 from dotenv import load_dotenv
 from telethon import TelegramClient
@@ -20,8 +21,17 @@ async def main():
 
     @client.on(events.NewMessage())
     async def msg_handler(event):
-        await binance_integration.main(event.message.to_dict()['message'])
 
+        if event.message.sender_id == api_id:
+            # the trader messaged!, place both order sides
+            user = 'trader'
+        else:
+            # the user messaged the trader
+            user = 'user'
+        return_msg = await binance_integration.main(event.message.to_dict()['message'], user)
+        await event.reply(return_msg)
+# 1941036469
+# InputPeerUser(user_id=1941036469, access_hash=2952108563083146034)
 with client:
     client.loop.run_until_complete(main())
     client.run_until_disconnected()
